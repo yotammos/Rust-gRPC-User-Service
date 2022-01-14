@@ -64,7 +64,7 @@ impl UserService for UserServiceImpl {
           let user = unique_users.first().unwrap();
           if user.password == request.password {
             Ok(Response::new(LoginResponse {
-              token: String::from("abc"),
+              token: String::from("abc"), // to be replaced with an auth token
             }))
           } else {
             Err(Status::not_found("user not found"))

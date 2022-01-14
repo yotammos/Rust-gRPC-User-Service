@@ -11,7 +11,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   let request = tonic::Request::new(LoginRequest {
     email: String::from("abc@123.com"),
-    password: String::from("edfg"),
+    password: String::from("edf"),
   });
   // let request = tonic::Request::new(ListUsersRequest {});
   let response = client.login(request).await?;
