@@ -1,5 +1,7 @@
+mod auth;
 mod ddb_client;
 
+use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 use tonic::{transport::Server, Request, Response, Status};
 use user_service::user_service_server::{UserService, UserServiceServer};
@@ -11,6 +13,12 @@ use uuid::Uuid;
 
 pub mod user_service {
   tonic::include_proto!("user_service");
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct LoginSession {
+  user_id: String,
+  email: String,
 }
 
 #[derive(Debug, Default)]
@@ -63,9 +71,8 @@ impl UserService for UserServiceImpl {
         } else {
           let user = unique_users.first().unwrap();
           if user.password == request.password {
-            Ok(Response::new(LoginResponse {
-              token: String::from("abc"), // to be replaced with an auth token
-            }))
+            let token = auth::create_token(&user.id, &auth::Role::Admin).unwrap();
+            Ok(Response::new(LoginResponse { token }))
           } else {
             Err(Status::not_found("user not found"))
           }

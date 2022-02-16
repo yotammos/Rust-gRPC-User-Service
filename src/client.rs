@@ -1,8 +1,17 @@
+use jsonwebtoken::{decode, DecodingKey, Validation};
+use serde::{Deserialize, Serialize};
 use user_service::user_service_client::UserServiceClient;
 use user_service::LoginRequest;
+mod auth;
 
 pub mod user_service {
   tonic::include_proto!("user_service");
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct LoginSession {
+  user_id: String,
+  email: String,
 }
 
 #[tokio::main]
@@ -17,5 +26,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   let response = client.login(request).await?;
 
   println!("RESPONSE={:?}", response);
+  let token = response.into_inner().token;
+  let user_id = decode::<auth::Claims>(
+    &token,
+    &DecodingKey::from_secret("secret".as_ref()),
+    &Validation::default(),
+  );
+  println!("User ID = {:?}", user_id);
   Ok(())
 }
