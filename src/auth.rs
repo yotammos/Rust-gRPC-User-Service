@@ -3,7 +3,6 @@ use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, 
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-const BEARER: &str = "Bearer ";
 const JWT_SECRET: &[u8] = b"secret";
 
 #[derive(Clone, PartialEq)]
@@ -32,9 +31,9 @@ impl fmt::Display for Role {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-  sub: String,
-  role: String,
-  exp: usize,
+  pub sub: String,
+  pub role: String,
+  pub exp: usize,
 }
 
 pub fn create_token(uid: &str, role: &Role) -> Result<String, jsonwebtoken::errors::Error> {

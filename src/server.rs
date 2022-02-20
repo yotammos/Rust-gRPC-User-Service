@@ -1,13 +1,15 @@
 mod auth;
 mod ddb_client;
 
+use auth::{create_token, Role};
+use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 use tonic::{transport::Server, Request, Response, Status};
 use user_service::user_service_server::{UserService, UserServiceServer};
 use user_service::{
-  CreateUserRequest, CreateUserResponse, ListUsersRequest, ListUsersResponse, LoginRequest,
-  LoginResponse, User,
+  AuthenticateRequest, AuthenticateResponse, CreateUserRequest, CreateUserResponse,
+  ListUsersRequest, ListUsersResponse, LoginRequest, LoginResponse, User,
 };
 use uuid::Uuid;
 
@@ -71,12 +73,34 @@ impl UserService for UserServiceImpl {
         } else {
           let user = unique_users.first().unwrap();
           if user.password == request.password {
-            let token = auth::create_token(&user.id, &auth::Role::Admin).unwrap();
+            let token = create_token(&user.id, &Role::Admin).unwrap();
             Ok(Response::new(LoginResponse { token }))
           } else {
             Err(Status::not_found("user not found"))
           }
         }
+      }
+      Err(error) => Err(Status::internal(error.to_string())),
+    }
+  }
+
+  async fn authenticate(
+    &self,
+    req: Request<AuthenticateRequest>,
+  ) -> Result<Response<AuthenticateResponse>, Status> {
+    let token = req.into_inner().token;
+    let decoded = decode::<auth::Claims>(
+      &token,
+      &DecodingKey::from_secret("secret".as_ref()),
+      &Validation::default(),
+    );
+    match decoded {
+      Ok(result) => {
+        let claims: auth::Claims = result.claims;
+        Ok(Response::new(AuthenticateResponse {
+          user_id: claims.sub,
+          role: claims.role,
+        }))
       }
       Err(error) => Err(Status::internal(error.to_string())),
     }

@@ -1,7 +1,7 @@
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use user_service::user_service_client::UserServiceClient;
-use user_service::LoginRequest;
+use user_service::{AuthenticateRequest, LoginRequest};
 mod auth;
 
 pub mod user_service {
@@ -32,6 +32,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     &DecodingKey::from_secret("secret".as_ref()),
     &Validation::default(),
   );
-  println!("User ID = {:?}", user_id);
+  println!("Decoded token = {:?}", user_id);
+
+  let response = client
+    .authenticate(tonic::Request::new(AuthenticateRequest { token }))
+    .await?;
+  let inner = response.into_inner();
+  println!("User ID = {:?}", inner.user_id);
+  println!("Role = {:?}", inner.role);
   Ok(())
 }
